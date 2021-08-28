@@ -1,5 +1,6 @@
 import os,
-  xmlparser, xmltree, tables, strtabs,
+  xmlparser, xmltree, 
+  tables, strtabs,
   strutils, strformat, sequtils,
   sugar, std/with
 
@@ -37,24 +38,19 @@ proc main(fname: string) =
   multiDel styles, ["width", "height", "fill"]
 
   for pel in pathels:
-    multiDel pel.attrs, ["style", "id", "class"]
-    pel.attrs[":fill"] = "color"
+    multiDel pel.attrs, ["id", "style", "fill"]
 
   let vueFile = newElement("wrapper")
   with vueFile:
     add newXmlTree("template", [svgEl])
     add newXmlTree("script", [newText [
-       "\n",
       """
+
         export default {
           name: """, "\"i-" & splittedFname.name & "\",\n",
         """
-          props: {
-            color: String,
-          },
         }
       """,
-      "\n"
     ].join.unindent 4 * 2])
     add newXmlTree("style", [newText [
        "\nsvg{\n",
@@ -62,9 +58,9 @@ proc main(fname: string) =
        "\n}\n"
     ].join], {"scoped": "scoped"}.toXmlAttributes)
 
-
   writeFile fmt"./output/{splittedfname.name}.vue",
       vuefile.items.toseq.join("\n\n").replace("&quot;", "\"")
+
 
 when isMainModule:
   if paramCount() >= 1:
