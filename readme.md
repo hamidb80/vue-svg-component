@@ -77,7 +77,6 @@ import Database from "@/components/icons/icon-file-name.vue"
 export default {
   name: "home",
   components: {
-    Triangle,
     'i-db': Database,
   }
 }
