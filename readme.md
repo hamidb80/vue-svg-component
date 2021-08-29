@@ -75,7 +75,7 @@ this is also valid for `width` and `height` attributes
 import Database from "@/components/icons/icon-file-name.vue"
 
 export default {
-  name: "Home",
+  name: "home",
   components: {
     Triangle,
     'i-db': Database,
