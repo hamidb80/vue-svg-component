@@ -57,4 +57,36 @@ svg{
 ```
 
 # How To Use
+
+### in Command Line
 use `app -h` or `app --help` to see the usage
+
+### in Vue app
+you can pass `fill` attribute directly or use `fill` property in a css class
+
+this is also valid for `width` and `height` attributes
+
+```xml
+<template>
+  <i-db class="large" fill="#c0ffee"/>
+</template>
+
+<script>
+import Database from "@/components/icons/icon-file-name.vue"
+
+export default {
+  name: "Home",
+  components: {
+    Triangle,
+    'i-db': Database,
+  }
+}
+</script>
+
+<style>
+.large{
+  width: 200px;
+  height: 200px;
+}
+</style>
+```
