@@ -16,7 +16,7 @@ template multiDel(t: untyped, keys: openArray[string]) =
   for k in keys:
     del t, k
 
-# ---------------------------------------------------------------
+# ----------------------------------------------
 
 func parseStyles(line: string): cssStyles =
   collect:
@@ -32,7 +32,7 @@ func `$`(s: cssStyles, sep = ","): string =
 
   temp.join sep
 
-# ---------------------------------------------------------------
+# ----------------------------------------------
 
 func createVueTemplate(svgEl: XmlNode, scripts, styles: string): string=
   
@@ -44,7 +44,6 @@ func createVueTemplate(svgEl: XmlNode, scripts, styles: string): string=
 
   # replace escaped " with real "
   vuefile.items.toseq.join("\n\n").replace("&quot;", "\"")
-
 
 proc compileSvg2Vue(svgPath, outPath: string) =
   let
@@ -80,11 +79,10 @@ proc compileSvg2Vue(svgPath, outPath: string) =
     ].join
   )
       
-
+# ----------------------------------------------
 
 when isMainModule:
-
-  var p = newParser:
+  const p = newParser:
     help """
       ..:: Vue svg component ::..
       Author: hamidb80
@@ -136,9 +134,6 @@ when isMainModule:
   except ShortCircuit as e:
     if e.flag == "argparse_help":
       echo p.help
-
-
   except:
     stderr.writeLine getCurrentExceptionMsg()
     quit(1)
-
