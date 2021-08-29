@@ -89,3 +89,6 @@ export default {
 }
 </style>
 ```
+
+# Featues
+- built-in file watcher + database
