@@ -54,7 +54,7 @@ proc compileSvg2Vue(svgPath, outPath: string) =
   var styles = parseStyles svgel.attr "style"
   multiDel styles, ["width", "height", "fill"]
   
-  multiDel svgel.attrs, ["class", "style"]
+  multiDel svgel.attrs, ["class", "style", "fill"]
 
   for pel in svgEl.findall "path":
     multiDel pel.attrs, ["id", "style", "fill"]
