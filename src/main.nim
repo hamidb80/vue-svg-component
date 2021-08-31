@@ -4,7 +4,7 @@ import os,
   strutils, strformat, sequtils,
   sugar, std/with
 
-import 
+import
   argparse,
   watch_for_files, threadpool
 
@@ -34,18 +34,19 @@ func `$`(s: cssStyles, sep = ","): string =
 
 # ----------------------------------------------
 
-func createVueTemplate(svgEl: XmlNode, scripts, styles: string): string=
-  
+func createVueTemplate(svgEl: XmlNode, scripts, styles: string): string =
+
   let vueFile = newElement("wrapper")
   with vueFile:
     add newXmlTree("template", [svgEl])
     add newXmlTree("script", [newText scripts])
-    add newXmlTree("style", [newText styles], {"scoped": "scoped"}.toXmlAttributes)
+    add newXmlTree("style", [newText styles], {
+        "scoped": "scoped"}.toXmlAttributes)
 
   # replace escaped " with real "
   vuefile.items.toseq.join("\n\n").replace("&quot;", "\"")
 
-proc compileSvg2Vue(svgPath, outPath: string) =
+proc compileSvg2Vue*(svgPath, outPath: string) =
   let
     svgEl = loadXml svgPath # xml tree
     splittedFname = splitFile svgPath
@@ -53,7 +54,7 @@ proc compileSvg2Vue(svgPath, outPath: string) =
   # remove/modify attributes
   var styles = parseStyles svgel.attr "style"
   multiDel styles, ["width", "height", "fill"]
-  
+
   multiDel svgel.attrs, ["class", "style", "fill"]
 
   for pel in svgEl.findall "path":
@@ -78,7 +79,7 @@ proc compileSvg2Vue(svgPath, outPath: string) =
        "\n}\n"
     ].join
   )
-      
+
 # ----------------------------------------------
 
 when isMainModule:
@@ -91,30 +92,35 @@ when isMainModule:
         src/main.nim -s -db='output/db.json' ./assets/ ./output/
       """.strip.unindent 3 * 2
 
-    flag("-s", "--save", help="save states on every check")
-    option("-db", "--database", help="database file path")
-    option("-t", "--timeinvertal", default=some("1000"), help="timeout after every check in milliseconds [ms]")
-    arg("watch", help= "folder to watch")
-    arg("output", help= "folder to put outputs in")
+    flag("-s", "--save", help = "save states on every check")
+    flag("-w", "--watch", help = "enables watch for changes in traget folder")
+    option("-db", "--database", help = "database file path")
+    option("-t", "--timeinvertal", default = some("1000"),
+        help = "timeout after every check in milliseconds [ms]")
+    arg("target", help = "folder to watch")
+    arg("output", help = "folder to put outputs in")
 
   try:
     let args = p.parse(commandLineParams())
+    let timeout = parseInt args.timeinvertal
 
-    var 
+    var
       ch: Channel[ChangeFeed]
-      active = true
+      active = args.watch
     ch.open
 
+
     spawn goWatch(
-      args.watch, 
-      unsafeAddr ch, 
-      unsafeAddr active, 
-      parseInt args.timeinvertal, 
+      args.target,
+      unsafeAddr ch,
+      unsafeAddr active,
+      timeout,
       args.database,
       args.save
     )
-  
+
     while true:
+      sleep timeout
       let (av, feed) = ch.tryrecv
       if av:
         echo fmt"'{feed.path}', {feed.kind}"
@@ -128,8 +134,9 @@ when isMainModule:
           compileSvg2Vue feed.path, opath
         else: # CFDelete
           removeFile opath
-      
-      sleep 100
+
+      if not active:
+        break
 
   except ShortCircuit as e:
     if e.flag == "argparse_help":

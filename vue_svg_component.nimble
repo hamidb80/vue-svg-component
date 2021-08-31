@@ -12,5 +12,5 @@ bin           = @["main"]
 
 requires "nim >= 1.5.1"
 requires "argparse"
-requires "https://github.com/hamidb80/watch_for_files"
+requires "watch_for_files"
 
