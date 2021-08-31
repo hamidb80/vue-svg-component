@@ -92,3 +92,10 @@ export default {
 
 # Featues
 - built-in file watcher + database
+
+# How to build
+you must have nim >= 1.5.1 installed [it's devel version at the time of writing this]
+and then enter:
+```
+nimble build
+```
