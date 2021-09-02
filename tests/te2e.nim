@@ -2,7 +2,7 @@ import
   unittest, 
   osproc, strutils, os
 
-
+#FIXME find paths dynamicly
 test "e2e":
   let (output, exitCode) = execCmdEx("./temp.exe ./assets/ ./output/")
   check:
