@@ -121,8 +121,10 @@ when isMainModule:
 
     while true:
       sleep timeout
-      let (av, feed) = ch.tryrecv
-      if av:
+      
+      var (av, feed) = ch.tryrecv
+      while av:
+
         echo fmt"'{feed.path}', {feed.kind}"
 
         let fname = splitFile(feed.path)
@@ -134,6 +136,8 @@ when isMainModule:
           compileSvg2Vue feed.path, opath
         else: # CFDelete
           removeFile opath
+        
+        (av, feed) = ch.tryrecv
 
       if not active:
         break
