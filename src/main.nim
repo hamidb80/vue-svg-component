@@ -46,6 +46,16 @@ func createVueTemplate(svgEl: XmlNode, scripts, styles: string): string =
   # replace escaped " with real "
   vuefile.items.toseq.join("\n\n").replace("&quot;", "\"")
 
+proc removeStylesInChildren(xml: XmlNode, styleKeys: openArray[string])=
+  for node in xml:
+    if node.attrsLen == 0:
+      continue
+
+    multiDel node.attrs, styleKeys
+
+    if node.len != 0:
+      removeStylesInChildren(node, styleKeys)
+
 proc compileSvg2Vue*(svgPath, outPath: string) =
   let
     svgEl = loadXml svgPath # xml tree
@@ -54,12 +64,8 @@ proc compileSvg2Vue*(svgPath, outPath: string) =
   # remove/modify attributes
   var styles = parseStyles svgel.attr "style"
   multiDel styles, ["width", "height", "fill"]
-
   multiDel svgel.attrs, ["class", "style", "fill"]
-
-  for pel in svgEl.findall "path":
-    multiDel pel.attrs, ["id", "style", "fill"]
-
+  removeStylesInChildren svgEl ,["id", "style", "fill"]
 
   writeFile outpath, createVueTemplate(
     svgEl,
@@ -124,7 +130,6 @@ when isMainModule:
       
       var (av, feed) = ch.tryrecv
       while av:
-
         echo fmt"'{feed.path}', {feed.kind}"
 
         let fname = splitFile(feed.path)
