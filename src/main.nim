@@ -1,5 +1,5 @@
 import os,
-  xmlparser, xmltree,
+  htmlgen, xmlparser, xmltree,
   tables, strtabs,
   strutils, strformat, sequtils,
   sugar, std/with
@@ -46,7 +46,7 @@ func createVueTemplate(svgEl: XmlNode, scripts, styles: string): string =
   # replace escaped " with real "
   vuefile.items.toseq.join("\n\n").replace("&quot;", "\"")
 
-proc removeStylesInChildren(xml: XmlNode, styleKeys: openArray[string])=
+proc removeStylesInChildren(xml: XmlNode, styleKeys: openArray[string]) =
   for node in xml:
     if node.attrsLen == 0:
       continue
@@ -65,7 +65,7 @@ proc compileSvg2Vue*(svgPath, outPath: string) =
   var styles = parseStyles svgel.attr "style"
   multiDel styles, ["width", "height", "fill"]
   multiDel svgel.attrs, ["class", "style", "fill"]
-  removeStylesInChildren svgEl ,["id", "style", "fill"]
+  removeStylesInChildren svgEl, ["id", "style", "fill"]
 
   writeFile outpath, createVueTemplate(
     svgEl,
@@ -86,6 +86,40 @@ proc compileSvg2Vue*(svgPath, outPath: string) =
     ].join
   )
 
+proc genHTMLpreview*(files: openArray[string], dest: string) =
+  var iconElems: seq[string]
+  let destSplitted = splitFile dest
+
+  for path in files:
+    iconElems.add `div`(class = "icon-wrapper",
+      img(src = relativePath(path, destSplitted.dir), alt = ""),
+      `div`(class = "label", path.splitFile.name),
+    )
+
+  writeFile dest, html(
+    style("""
+      body{
+        display: flex;
+      }
+
+      .icon-wrapper{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      img{
+        width: 64px;
+        height: 64px;
+      }
+
+      .label{
+        font-weight: bold;
+        text-align: center;
+      }
+    """),
+    body(iconElems.join)
+  )
+
 # ----------------------------------------------
 
 when isMainModule:
@@ -101,6 +135,7 @@ when isMainModule:
     flag("-s", "--save", help = "save states on every check")
     flag("-w", "--watch", help = "enables watch for changes in traget folder")
     option("-db", "--database", help = "database file path")
+    option("-d", "--display", help = "create a icon list html file in given path ||| DO NOT use it with database(-db) or file watcher(-w)")
     option("-t", "--timeinvertal", default = some("1000"),
         help = "timeout after every check in milliseconds [ms]")
     arg("target", help = "folder to watch")
@@ -127,29 +162,38 @@ when isMainModule:
 
     while true:
       sleep timeout
-      
-      var (av, feed) = ch.tryrecv
+
+      var
+        (av, feed) = ch.tryrecv
+        svgsPath: seq[string]
+
       while av:
         echo fmt"'{feed.path}', {feed.kind}"
 
-        let fname = splitFile(feed.path)
+        let fname = splitFile feed.path
         if fname.ext != ".svg": continue
 
         let opath = args.output / fname.name & ".vue"
 
         if feed.kind in [CFCreate, CFEdit]:
+          svgsPath.add feed.path
           compileSvg2Vue feed.path, opath
+
         else: # CFDelete
           removeFile opath
-        
+
         (av, feed) = ch.tryrecv
 
-      if not active:
-        break
+      if args.display != "":
+        genHTMLpreview svgsPath, args.display
+
+      svgsPath.setlen 0
+      if not active: break
 
   except ShortCircuit as e:
     if e.flag == "argparse_help":
       echo p.help
+
   except:
     stderr.writeLine getCurrentExceptionMsg()
     quit(1)
