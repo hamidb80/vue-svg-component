@@ -138,7 +138,7 @@ when isMainModule:
     flag("-s", "--save", help = "save states on every check")
     flag("-w", "--watch", help = "enables watch for changes in traget folder")
     option("-db", "--database", help = "database file path")
-    option("-p", "--preview", help = "create a icon list html file in given path ||| DO NOT use it with database(-db) or file watcher(-w)")
+    option("-p", "--preview", help = "create a icon list html file in given path")
     option("-ti", "--timeinvertal", default = some("1000"),
         help = "timeout after every check in milliseconds [ms]")
     arg("target", help = "folder to watch")
