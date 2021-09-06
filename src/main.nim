@@ -141,8 +141,8 @@ when isMainModule:
     option("-p", "--preview", help = "create a icon list html file in given path ||| DO NOT use it with database(-db) or file watcher(-w)")
     option("-ti", "--timeinvertal", default = some("1000"),
         help = "timeout after every check in milliseconds [ms]")
-    option("-o", "--output", help = "folder to put outputs in")
     arg("target", help = "folder to watch")
+    arg("output", help = "folder to put outputs in")
 
   try:
     let
@@ -169,8 +169,8 @@ when isMainModule:
       sleep timeout
 
       var
+        somethingNew = false 
         (av, feed) = ch.tryrecv
-        svgsPath: seq[string]
 
       while av:
         echo fmt"'{feed.path}', {feed.kind}"
@@ -181,17 +181,20 @@ when isMainModule:
         let opath = args.output / fname.name & ".vue"
 
         if feed.kind in [CFCreate, CFEdit]:
-          if previewMode: svgsPath.add feed.path
-          else: compileSvg2Vue feed.path, opath
+          somethingNew = true
+          compileSvg2Vue feed.path, opath
 
-        else: removeFile opath # CFDelete
+        else:
+          removeFile opath # CFDelete
 
         (av, feed) = ch.tryrecv
 
-      if previewMode:
-        genHTMLpreview svgsPath, args.preview
+      if previewMode and somethingNew:
+        genHTMLpreview(
+          args.target.walkDir.toseq.filterIt(it.path.endsWith "svg").mapIt it.path,
+          args.preview
+        )
         echo "preview file generated in: ", args.preview
-        quit(0)
 
       if not active: break
 
