@@ -99,17 +99,20 @@ proc genHTMLpreview*(files: openArray[string], dest: string) =
   writeFile dest, html(
     style("""
       body{
-        display: flex;
+        display: inline-flex;
+        flex-wrap: wrap;
       }
 
       .icon-wrapper{
         display: flex;
+        padding: 8px;
         flex-direction: column;
         align-items: center;
       }
       img{
         width: 64px;
         height: 64px;
+        border: 1px solid red;
       }
 
       .label{
@@ -135,15 +138,17 @@ when isMainModule:
     flag("-s", "--save", help = "save states on every check")
     flag("-w", "--watch", help = "enables watch for changes in traget folder")
     option("-db", "--database", help = "database file path")
-    option("-d", "--display", help = "create a icon list html file in given path ||| DO NOT use it with database(-db) or file watcher(-w)")
-    option("-t", "--timeinvertal", default = some("1000"),
+    option("-p", "--preview", help = "create a icon list html file in given path ||| DO NOT use it with database(-db) or file watcher(-w)")
+    option("-ti", "--timeinvertal", default = some("1000"),
         help = "timeout after every check in milliseconds [ms]")
+    option("-o", "--output", help = "folder to put outputs in")
     arg("target", help = "folder to watch")
-    arg("output", help = "folder to put outputs in")
 
   try:
-    let args = p.parse(commandLineParams())
-    let timeout = parseInt args.timeinvertal
+    let
+      args = p.parse(commandLineParams())
+      timeout = parseInt args.timeinvertal
+      previewMode = args.preview != ""
 
     var
       ch: Channel[ChangeFeed]
@@ -176,18 +181,18 @@ when isMainModule:
         let opath = args.output / fname.name & ".vue"
 
         if feed.kind in [CFCreate, CFEdit]:
-          svgsPath.add feed.path
-          compileSvg2Vue feed.path, opath
+          if previewMode: svgsPath.add feed.path
+          else: compileSvg2Vue feed.path, opath
 
-        else: # CFDelete
-          removeFile opath
+        else: removeFile opath # CFDelete
 
         (av, feed) = ch.tryrecv
 
-      if args.display != "":
-        genHTMLpreview svgsPath, args.display
+      if previewMode:
+        genHTMLpreview svgsPath, args.preview
+        echo "preview file generated in: ", args.preview
+        quit(0)
 
-      svgsPath.setlen 0
       if not active: break
 
   except ShortCircuit as e:
