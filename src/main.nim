@@ -144,7 +144,7 @@ const p = newParser:
       
       Example or usage:
         * full usage:
-          app  -w  -s  -d='output/db.json'  -p='./preview.html'  './assets/'  './output/'
+          app  -w  -s  -db='output/db.json'  -p='./preview.html'  './assets/'  './output/'
         * load from config file
           app  -c
       """
