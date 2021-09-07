@@ -3,6 +3,7 @@ import
   osproc, strutils, os
 
 #FIXME find paths dynamicly
+#TODO add test for config file
 test "e2e":
   let (output, exitCode) = execCmdEx("./temp.exe ./assets/ ./output/")
   check:

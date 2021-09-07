@@ -16,6 +16,14 @@ template multiDel(t: untyped, keys: openArray[string]) =
   for k in keys:
     del t, k
 
+const version = block:
+  var res: string
+  for line in splitlines readfile "./vue_svg_component.nimble":
+    if line.startswith "version":
+      res = line.splitwhitespace[^1].strip(chars = {'"'})
+      break
+  res
+
 # ----------------------------------------------
 
 func parseStyles(line: string): cssStyles =
@@ -127,17 +135,19 @@ proc genHTMLpreview*(files: openArray[string], dest: string) =
 
 when isMainModule:
   const p = newParser:
-    help """
+    help [
+      """
       ..:: Vue svg component ::..
       Author: hamidb80
-
+      Version: """ & version, """
+      
       Example or usage:
-        + full usage:
+        * full usage:
           app  -w  -s  -d='output/db.json'  -p='./preview.html'  './assets/'  './output/'
-        
-        + load from config file
+        * load from config file
           app  -c='config.ini'
-      """.strip.unindent 3 * 2
+      """
+    ].mapIt(it.strip.unindent 3 * 2).join "\n"
 
     flag("-s", "--save", help = "save states on every check")
     flag("-w", "--watch", help = "enables watch for changes in traget folder")
