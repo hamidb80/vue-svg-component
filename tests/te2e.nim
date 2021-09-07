@@ -1,6 +1,9 @@
 import 
   unittest, os, osproc,
-  sequtils, strutils, sugar
+  sequtils, strutils, strformat, re,
+  sugar
+
+const appPath = "./temp.exe"
 
 suite "e2e":
   let svgs = collect newseq:
@@ -8,9 +11,8 @@ suite "e2e":
       let sn = fname.splitFile
       sn.name & sn.ext
 
-
   test "compile all files in the folder":
-    let (output, exitCode) = execCmdEx "./temp.exe ./assets/ ./output/"
+    let (output, exitCode) = execCmdEx fmt"{appPath} ./assets/ ./output/"
     check:
       exitCode == 0
       svgs.allIt it in output
@@ -18,3 +20,6 @@ suite "e2e":
 
   for (_, fname) in walkdir "output":
     removeFile fname
+
+test "short circuit":
+  check (execCmdEx fmt"{appPath} -v").output =~ re"\d+\.\d+\.\d+"

@@ -221,12 +221,13 @@ template runProctected(args): untyped =
     run args
   except:
     stderr.writeLine getCurrentExceptionMsg()
-    quit(1)
+    quit 1
 
 
 when isMainModule:
   try:
-    runProctected p.parse commandLineParams()
+    let args = p.parse commandLineParams()
+    runProctected args
 
   except ShortCircuit as e:
     case e.flag:
