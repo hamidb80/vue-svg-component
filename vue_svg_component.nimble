@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.1.1"
+version       = "0.1.2"
 author        = "hamidb80"
 description   = "a program to convert svg images to vuejs components"
 license       = "MIT"

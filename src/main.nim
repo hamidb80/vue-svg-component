@@ -16,13 +16,15 @@ template multiDel(t: untyped, keys: openArray[string]) =
   for k in keys:
     del t, k
 
-const version = block:
-  var res: string
-  for line in splitlines readfile "./vue_svg_component.nimble":
-    if line.startswith "version":
-      res = line.splitwhitespace[^1].strip(chars = {'"'})
-      break
-  res
+const
+  defaultConfigFileName = "vuesvg.cfg"
+  version = block:
+    var res: string
+    for line in splitlines readfile "./vue_svg_component.nimble":
+      if line.startswith "version":
+        res = line.splitwhitespace[^1].strip(chars = {'"'})
+        break
+    res
 
 # ----------------------------------------------
 
@@ -133,10 +135,9 @@ proc genHTMLpreview*(files: openArray[string], dest: string) =
 
 # ----------------------------------------------
 
-when isMainModule:
-  const p = newParser:
-    help [
-      """
+const p = newParser:
+  help [
+    """
       ..:: Vue svg component ::..
       Author: hamidb80
       Version: """ & version, """
@@ -145,84 +146,93 @@ when isMainModule:
         * full usage:
           app  -w  -s  -d='output/db.json'  -p='./preview.html'  './assets/'  './output/'
         * load from config file
-          app  -c='config.ini'
+          app  -c  .  .
       """
-    ].mapIt(it.strip.unindent 3 * 2).join "\n"
+  ].mapIt(it.strip.unindent 3 * 2).join "\n"
 
-    flag("-s", "--save", help = "save states on every check")
-    flag("-v", "--version", help = "shows the version", shortcircuit = true)
-    flag("-w", "--watch", help = "enables watch for changes in traget folder")
-    option("-c", "--config", help = "load from config file")
-    option("-db", "--database", help = "database file path")
-    option("-p", "--preview", help = "create a icon list html file in given path")
-    option("-ti", "--timeinvertal", default = some("1000"),
-        help = "timeout after every check in milliseconds [ms]")
-    arg("target", help = "folder to watch")
-    arg("output", help = "folder to put outputs in")
+  flag("-s", "--save", help = "save states on every check")
+  flag("-v", "--version", help = "shows the version", shortcircuit = true)
+  flag("-w", "--watch", help = "enables watch for changes in traget folder")
+  flag("-c", "--config", help = fmt"load from config file named '${defaultConfigFileName}'",
+      shortcircuit = true)
+  option("-db", "--database", help = "database file path")
+  option("-p", "--preview", help = "create a icon list html file in given path")
+  option("-ti", "--timeinvertal", default = some("1000"),
+      help = "timeout after every check in milliseconds [ms]")
+  arg("target", help = "folder to watch")
+  arg("output", help = "folder to put outputs in")
 
-  try:
-    var args = p.parse commandLineParams()
-    if args.config != "":
-      args = p.parse splitWhitespace readFile args.config
 
-    let
-      timeout = parseInt args.timeinvertal
-      previewMode = args.preview != ""
+proc run(args: typeof p.parse(newseq[string]())) =
+  let
+    timeout = parseInt args.timeinvertal
+    previewMode = args.preview != ""
+
+  var
+    ch: Channel[ChangeFeed]
+    active = args.watch
+  ch.open
+
+  spawn goWatch(
+    args.target,
+    unsafeAddr ch,
+    unsafeAddr active,
+    timeout,
+    args.database,
+    args.save
+  )
+
+  while true:
+    sleep timeout
 
     var
-      ch: Channel[ChangeFeed]
-      active = args.watch
-    ch.open
+      somethingNew = false
+      (av, feed) = ch.tryrecv
 
-    spawn goWatch(
-      args.target,
-      unsafeAddr ch,
-      unsafeAddr active,
-      timeout,
-      args.database,
-      args.save
-    )
+    while av:
+      somethingNew = true
+      echo fmt"'{feed.path}', {feed.kind}"
 
-    while true:
-      sleep timeout
+      let fname = splitFile feed.path
+      if fname.ext != ".svg": continue
 
-      var
-        somethingNew = false
-        (av, feed) = ch.tryrecv
+      let opath = args.output / fname.name & ".vue"
 
-      while av:
-        somethingNew = true
-        echo fmt"'{feed.path}', {feed.kind}"
+      if feed.kind in [CFCreate, CFEdit]:
+        compileSvg2Vue feed.path, opath
+      else:
+        removeFile opath # CFDelete
 
-        let fname = splitFile feed.path
-        if fname.ext != ".svg": continue
+      (av, feed) = ch.tryrecv
 
-        let opath = args.output / fname.name & ".vue"
+    if previewMode and somethingNew:
+      genHTMLpreview(
+        args.target.walkDir.toseq.filterIt(
+            it.path.endsWith "svg").mapIt it.path,
+        args.preview
+      )
+      echo "preview file generated in: ", args.preview
 
-        if feed.kind in [CFCreate, CFEdit]:
-          compileSvg2Vue feed.path, opath
-        else:
-          removeFile opath # CFDelete
+    if not active: break
 
-        (av, feed) = ch.tryrecv
 
-      if previewMode and somethingNew:
-        genHTMLpreview(
-          args.target.walkDir.toseq.filterIt(
-              it.path.endsWith "svg").mapIt it.path,
-          args.preview
-        )
-        echo "preview file generated in: ", args.preview
-
-      if not active: break
-
-  except ShortCircuit as e:
-    echo:
-      case e.flag:
-      of "argparse_help": p.help
-      of "version": version
-      else: "not defined"
-
+template runProctected(args): untyped =
+  try:
+    run args
   except:
     stderr.writeLine getCurrentExceptionMsg()
     quit(1)
+
+
+when isMainModule:
+  try:
+    runProctected p.parse commandLineParams()
+
+  except ShortCircuit as e:
+    case e.flag:
+    of "argparse_help":
+      echo p.help
+    of "version":
+      echo version
+    of "config":
+      runProctected p.parse splitWhitespace readFile defaultConfigFileName
