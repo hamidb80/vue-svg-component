@@ -131,12 +131,17 @@ when isMainModule:
       ..:: Vue svg component ::..
       Author: hamidb80
 
-      Example:
-        src/main.nim -s -db='output/db.json' ./assets/ ./output/
+      Example or usage:
+        + full usage:
+          app  -w  -s  -d='output/db.json'  -p='./preview.html'  './assets/'  './output/'
+        
+        + load from config file
+          app  -c='config.ini'
       """.strip.unindent 3 * 2
 
     flag("-s", "--save", help = "save states on every check")
     flag("-w", "--watch", help = "enables watch for changes in traget folder")
+    option("-c", "--config", help = "load from config file")
     option("-db", "--database", help = "database file path")
     option("-p", "--preview", help = "create a icon list html file in given path")
     option("-ti", "--timeinvertal", default = some("1000"),
@@ -145,8 +150,11 @@ when isMainModule:
     arg("output", help = "folder to put outputs in")
 
   try:
+    var args = p.parse commandLineParams()
+    if args.config != "":
+      args = p.parse splitWhitespace readFile args.config
+
     let
-      args = p.parse(commandLineParams())
       timeout = parseInt args.timeinvertal
       previewMode = args.preview != ""
 
@@ -154,7 +162,6 @@ when isMainModule:
       ch: Channel[ChangeFeed]
       active = args.watch
     ch.open
-
 
     spawn goWatch(
       args.target,
@@ -169,10 +176,11 @@ when isMainModule:
       sleep timeout
 
       var
-        somethingNew = false 
+        somethingNew = false
         (av, feed) = ch.tryrecv
 
       while av:
+        somethingNew = true
         echo fmt"'{feed.path}', {feed.kind}"
 
         let fname = splitFile feed.path
@@ -181,9 +189,7 @@ when isMainModule:
         let opath = args.output / fname.name & ".vue"
 
         if feed.kind in [CFCreate, CFEdit]:
-          somethingNew = true
           compileSvg2Vue feed.path, opath
-
         else:
           removeFile opath # CFDelete
 
@@ -191,7 +197,8 @@ when isMainModule:
 
       if previewMode and somethingNew:
         genHTMLpreview(
-          args.target.walkDir.toseq.filterIt(it.path.endsWith "svg").mapIt it.path,
+          args.target.walkDir.toseq.filterIt(
+              it.path.endsWith "svg").mapIt it.path,
           args.preview
         )
         echo "preview file generated in: ", args.preview
