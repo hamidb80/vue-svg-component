@@ -220,7 +220,7 @@ template runProctected(args): untyped =
   try:
     run args
   except:
-    stderr.writeLine getCurrentExceptionMsg()
+    stderr.writeLine "Error: ", getCurrentExceptionMsg()
     quit 1
 
 
