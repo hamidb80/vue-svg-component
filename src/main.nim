@@ -223,7 +223,6 @@ when isMainModule:
       of "version": version
       else: "not defined"
 
-
   except:
     stderr.writeLine getCurrentExceptionMsg()
     quit(1)
