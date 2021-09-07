@@ -146,7 +146,7 @@ const p = newParser:
         * full usage:
           app  -w  -s  -d='output/db.json'  -p='./preview.html'  './assets/'  './output/'
         * load from config file
-          app  -c  .  .
+          app  -c
       """
   ].mapIt(it.strip.unindent 3 * 2).join "\n"
 
