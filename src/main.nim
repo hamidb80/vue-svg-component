@@ -150,6 +150,7 @@ when isMainModule:
     ].mapIt(it.strip.unindent 3 * 2).join "\n"
 
     flag("-s", "--save", help = "save states on every check")
+    flag("-v", "--version", help = "shows the version", shortcircuit = true)
     flag("-w", "--watch", help = "enables watch for changes in traget folder")
     option("-c", "--config", help = "load from config file")
     option("-db", "--database", help = "database file path")
@@ -216,8 +217,12 @@ when isMainModule:
       if not active: break
 
   except ShortCircuit as e:
-    if e.flag == "argparse_help":
-      echo p.help
+    echo:
+      case e.flag:
+      of "argparse_help": p.help
+      of "version": version
+      else: "not defined"
+
 
   except:
     stderr.writeLine getCurrentExceptionMsg()
