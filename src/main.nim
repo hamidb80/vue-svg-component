@@ -153,7 +153,7 @@ const p = newParser:
   flag("-s", "--save", help = "save states on every check")
   flag("-v", "--version", help = "shows the version", shortcircuit = true)
   flag("-w", "--watch", help = "enables watch for changes in traget folder")
-  flag("-c", "--config", help = fmt"load from config file named '{defaultConfigFileName}'",
+  flag("-c", "--config", help = fmt"load from config file named '{defaultConfigFileName}' in the directory",
       shortcircuit = true)
   option("-db", "--database", help = "database file path")
   option("-p", "--preview", help = "create a icon list html file in given path")
