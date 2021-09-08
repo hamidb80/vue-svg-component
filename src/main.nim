@@ -2,7 +2,7 @@ import os,
   htmlgen, xmlparser, xmltree,
   tables, strtabs,
   strutils, strformat, sequtils,
-  sugar, std/with
+  sugar, std/with, base64
 
 import
   argparse,
@@ -25,6 +25,8 @@ const
         res = line.splitwhitespace[^1].strip(chars = {'"'})
         break
     res
+
+  encodedBg = encode readFile "./bg.png"
 
 # ----------------------------------------------
 
@@ -119,10 +121,15 @@ proc genHTMLpreview*(files: openArray[string], dest: string) =
         flex-direction: column;
         align-items: center;
       }
+
       img{
-        width: 64px;
-        height: 64px;
+        width: 96px;
+        height: 96px;
         border: 1px solid red;
+        background: url(data:image/png;base64,""" & encodedBg &
+        """);
+        background-repeat: repeat;
+        background-size: 16px;
       }
 
       .label{
