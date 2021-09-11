@@ -60,10 +60,8 @@ func createVueTemplate(svgEl: XmlNode, scripts, styles: string): string =
 
 proc removeStylesInChildren(xml: XmlNode, styleKeys: openArray[string]) =
   for node in xml:
-    if node.attrsLen == 0:
-      continue
-
-    multiDel node.attrs, styleKeys
+    if node.attrsLen != 0:
+      multiDel node.attrs, styleKeys
 
     if node.len != 0:
       removeStylesInChildren(node, styleKeys)
