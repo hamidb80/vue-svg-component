@@ -21,5 +21,7 @@ suite "e2e":
   for (_, fname) in walkdir "output":
     removeFile fname
 
+  writefile "./output/.nomedia", ""
+
 test "short circuit":
   check (execCmdEx fmt"{appPath} -v").output =~ re"\d+\.\d+\.\d+"
